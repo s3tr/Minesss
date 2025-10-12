@@ -67,6 +67,7 @@
       const { useEffect, useMemo, useRef, useState, useCallback } = React;
 
       // --- Types ---
+      // Keeping types for reference, but avoiding using them in function signatures and useState generics.
       type Cell = {
         x: number; y: number; isMine: boolean; isRevealed: boolean; isFlagged: boolean; neighborMines: number;
       };
@@ -80,16 +81,16 @@
         { label: "Expert (30x16, 99 Mines)", cols: 30, rows: 16, mines: 99 },
       ];
       
-      const numberClass: { [key: number]: string } = {
+      const numberClass = {
         1: "num-1", 2: "num-2", 3: "num-3", 4: "num-4",
         5: "num-5", 6: "num-6", 7: "num-7", 8: "num-8",
       };
 
       // --- Helpers ---
-      function createEmptyBoard(cols: number, rows: number): Board {
-        const grid: Board = [];
+      function createEmptyBoard(cols, rows) { // Removed type annotations
+        const grid = [];
         for (let y = 0; y < rows; y++) {
-          const row: Cell[] = [];
+          const row = [];
           for (let x = 0; x < cols; x++) {
             row.push({ x, y, isMine: false, isRevealed: false, isFlagged: false, neighborMines: 0 });
           }
@@ -98,12 +99,12 @@
         return grid;
       }
 
-      function inBounds(cols: number, rows: number, x: number, y: number) {
+      function inBounds(cols, rows, x, y) { // Removed type annotations
         return x >= 0 && y >= 0 && x < cols && y < rows;
       }
 
-      function neighborsOf(cols: number, rows: number, x: number, y: number): { x: number; y: number }[] {
-        const neighbors: { x: number; y: number }[] = [];
+      function neighborsOf(cols, rows, x, y) { // Removed type annotations
+        const neighbors = [];
         for (let dx = -1; dx <= 1; dx++) {
           for (let dy = -1; dy <= 1; dy++) {
             if (dx === 0 && dy === 0) continue;
@@ -114,15 +115,16 @@
             }
           }
         }
+        // NOTE: The return type is implicitly { x: number, y: number }[]
         return neighbors;
       }
 
       function initializeBoard(
-        cols: number, rows: number, mines: number, startX: number, startY: number
-      ): Board {
+        cols, rows, mines, startX, startY // Removed type annotations
+      ) {
         let newBoard = createEmptyBoard(cols, rows);
-        // FIX: Removed TypeScript generic type annotation (<string>) from new Set()
-        // Babel standalone sometimes misinterprets this as JSX, causing a SyntaxError.
+        
+        // This Set no longer needs the explicit generic type <string>
         const cellsToAvoid = new Set();
 
         // Avoid placing mines on the starting cell and its immediate neighbors (3x3 area)
@@ -158,13 +160,14 @@
           return cell;
         }));
 
+        // NOTE: The return type is implicitly Board
         return newBoard;
       }
 
       // --- Component ---
       function Minesweeper() {
         const [difficulty, setDifficulty] = useState(DIFFICULTIES[0]);
-        // FIX: Removed the explicit type annotation <Board> to avoid a ReferenceError in the Babel compilation environment.
+        // Corrected: Removed the explicit type annotation <Board>
         const [board, setBoard] = useState(() => createEmptyBoard(difficulty.cols, difficulty.rows));
         const [alive, setAlive] = useState(true);
         const [minesLeft, setMinesLeft] = useState(difficulty.mines);
@@ -181,10 +184,10 @@
 
         // Recursively reveals empty cells
         const floodFill = useCallback((
-          currentBoard: Board, 
-          x: number, 
-          y: number
-        ): [Board, boolean] => {
+          currentBoard, // Removed : Board
+          x,            // Removed : number
+          y             // Removed : number
+        ) => { // Removed ): [Board, boolean] return type annotation
           if (!inBounds(cols, rows, x, y) || currentBoard[y][x].isRevealed) {
             return [currentBoard, false];
           }
@@ -213,7 +216,7 @@
         }, [cols, rows]);
 
         // Function to handle cell click (reveal or flag)
-        const handleCellClick = useCallback((x: number, y: number, isFlagging: boolean) => {
+        const handleCellClick = useCallback((x, y, isFlagging) => { // Removed type annotations
           setBoard(prevBoard => {
             if (!alive || won) return prevBoard;
             let newBoard = [...prevBoard.map(row => [...row])];
@@ -252,7 +255,7 @@
         }, [alive, won, initialized, cols, rows, mines, flagMode, floodFill]);
 
         // Handle chord click (double-click a revealed number)
-        const handleChord = useCallback((x: number, y: number) => {
+        const handleChord = useCallback((x, y) => { // Removed type annotations
             setBoard(prevBoard => {
                 if (!alive || won) return prevBoard;
                 
@@ -325,9 +328,8 @@
 
         // Handle global context menu (right-click) to prevent default context menu
         useEffect(() => {
-          const handleContext = (e: MouseEvent) => {
+          const handleContext = (e) => { // Removed : MouseEvent
             // Only prevent if the user is right-clicking outside of a control
-            // FIX: Replaced TypeScript 'as HTMLElement' assertion with standard JS check.
             const target = e.target;
             if (!target || !(target instanceof HTMLElement) || !target.closest('#minesweeper-grid')) {
               e.preventDefault();
@@ -339,7 +341,7 @@
 
 
         // Function to handle cell right-click (context menu event)
-        const handleContextMenu = (e: React.MouseEvent, x: number, y: number) => {
+        const handleContextMenu = (e, x, y) => { // Removed type annotations
           e.preventDefault();
           e.stopPropagation();
           // Check for shift key press for desktop flag toggle
