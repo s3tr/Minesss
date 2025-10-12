@@ -2,9 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <!-- CRITICAL FIX: Added maximum-scale=1.0 and user-scalable=no to prevent unwanted mobile browser zooming on tap -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
     <title>Minesweeper | Fully Responsive React Game</title>
     <!-- Tailwind CSS CDN for styling -->
@@ -23,34 +24,29 @@
       /* Custom styles for the grid and responsive display */
       #minesweeper-grid {
         display: grid;
-        /* Set grid to fill 100% of its container width, letting grid-template-columns handle the cell distribution */
-        width: 100%; 
-        max-width: fit-content; /* Helps in centering by shrinking to content size */
+        width: 100%; /* Ensure it takes full width of its container */
         margin: 0 auto;
         border-radius: 0.5rem;
         box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
       }
       .cell-button {
-        /*
-          Removed fixed width and height (30px/28px).
-          The width is now fluid (1fr), and aspect-ratio ensures it stays square.
-        */
-        aspect-ratio: 1 / 1; /* New: Ensures the cell remains perfectly square (height = width) */
+        /* Ensures the cell remains perfectly square (height = width), essential for grid games */
+        aspect-ratio: 1 / 1; 
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: bold;
-        /* Using vmin for font size to scale gracefully, especially in 30-column mode */
-        font-size: 3vmin; 
+        /* Base font size for desktop, relying on fluid sizing for mobile */
+        font-size: 16px; 
         border: 1px solid #ccc; /* fallback border */
         box-sizing: border-box;
       }
 
-      /* Responsive adjustments for cell size on smaller screens */
+      /* Responsive adjustments for smaller screens (especially important for 30-col mode) */
       @media (max-width: 640px) {
         .cell-button {
-          /* In a small screen, use view width (vw) for better mobile scaling of the font */
-          font-size: 3.8vw; 
+          /* Use viewport width to scale the font aggressively on smaller screens */
+          font-size: 4vw; 
         }
       }
       
@@ -71,16 +67,13 @@
     <script type="text/babel" data-presets="typescript,react">
       const { useEffect, useMemo, useRef, useState, useCallback } = React;
 
-      // --- Types ---
-      // Keeping types for reference, but avoiding using them in function signatures and useState generics.
-      type Cell = {
-        x: number; y: number; isMine: boolean; isRevealed: boolean; isFlagged: boolean; neighborMines: number;
-      };
-      type Board = Cell[][];
-      type Difficulty = { label: string; cols: number; rows: number; mines: number; };
+      // --- Types (For reference only, types removed from JS functions for compatibility) ---
+      // type Cell = { x: number; y: number; isMine: boolean; isRevealed: boolean; isFlagged: boolean; neighborMines: number; };
+      // type Board = Cell[][];
+      // type Difficulty = { label: string; cols: number; rows: number; mines: number; };
 
       // --- Constants ---
-      const DIFFICULTIES: Difficulty[] = [
+      const DIFFICULTIES = [
         { label: "Beginner (9x9, 10 Mines)", cols: 9, rows: 9, mines: 10 },
         { label: "Intermediate (16x16, 40 Mines)", cols: 16, rows: 16, mines: 40 },
         { label: "Expert (30x16, 99 Mines)", cols: 30, rows: 16, mines: 99 },
@@ -92,7 +85,7 @@
       };
 
       // --- Helpers ---
-      function createEmptyBoard(cols, rows) { // Removed type annotations
+      function createEmptyBoard(cols, rows) {
         const grid = [];
         for (let y = 0; y < rows; y++) {
           const row = [];
@@ -104,11 +97,11 @@
         return grid;
       }
 
-      function inBounds(cols, rows, x, y) { // Removed type annotations
+      function inBounds(cols, rows, x, y) {
         return x >= 0 && y >= 0 && x < cols && y < rows;
       }
 
-      function neighborsOf(cols, rows, x, y) { // Removed type annotations
+      function neighborsOf(cols, rows, x, y) {
         const neighbors = [];
         for (let dx = -1; dx <= 1; dx++) {
           for (let dy = -1; dy <= 1; dy++) {
@@ -120,16 +113,14 @@
             }
           }
         }
-        // NOTE: The return type is implicitly { x: number, y: number }[]
         return neighbors;
       }
 
       function initializeBoard(
-        cols, rows, mines, startX, startY // Removed type annotations
+        cols, rows, mines, startX, startY
       ) {
         let newBoard = createEmptyBoard(cols, rows);
         
-        // This Set no longer needs the explicit generic type <string>
         const cellsToAvoid = new Set();
 
         // Avoid placing mines on the starting cell and its immediate neighbors (3x3 area)
@@ -165,14 +156,12 @@
           return cell;
         }));
 
-        // NOTE: The return type is implicitly Board
         return newBoard;
       }
 
       // --- Component ---
       function Minesweeper() {
         const [difficulty, setDifficulty] = useState(DIFFICULTIES[0]);
-        // Corrected: Removed the explicit type annotation <Board>
         const [board, setBoard] = useState(() => createEmptyBoard(difficulty.cols, difficulty.rows));
         const [alive, setAlive] = useState(true);
         const [minesLeft, setMinesLeft] = useState(difficulty.mines);
@@ -188,11 +177,7 @@
         // --- Core Logic ---
 
         // Recursively reveals empty cells
-        const floodFill = useCallback((
-          currentBoard, // Removed : Board
-          x,            // Removed : number
-          y             // Removed : number
-        ) => { // Removed ): [Board, boolean] return type annotation
+        const floodFill = useCallback((currentBoard, x, y) => { 
           if (!inBounds(cols, rows, x, y) || currentBoard[y][x].isRevealed) {
             return [currentBoard, false];
           }
@@ -202,26 +187,22 @@
           cell.isFlagged = false; // Cannot be flagged once revealed
 
           if (cell.isMine) {
-            // Should not happen during flood fill but good safeguard
             return [currentBoard, true]; // Boom!
           }
 
-          let wasAnyChange = true;
           if (cell.neighborMines === 0) {
             // Recurse for all neighbors only if current cell has no neighbor mines
             for (const { x: nx, y: ny } of neighborsOf(cols, rows, x, y)) {
-                // Ignore the return value for explosion, as the parent call handles it
                 const [nextBoard, exploded] = floodFill(currentBoard, nx, ny);
                 currentBoard = nextBoard;
                 if (exploded) return [currentBoard, true];
-                wasAnyChange = wasAnyChange || (currentBoard[ny][nx].isRevealed && !currentBoard[ny][nx].isMine);
             }
           }
           return [currentBoard, false]; // No explosion
         }, [cols, rows]);
 
         // Function to handle cell click (reveal or flag)
-        const handleCellClick = useCallback((x, y, isFlagging) => { // Removed type annotations
+        const handleCellClick = useCallback((x, y, isFlagging) => { 
           setBoard(prevBoard => {
             if (!alive || won) return prevBoard;
             let newBoard = [...prevBoard.map(row => [...row])];
@@ -253,14 +234,14 @@
 
             // Perform flood fill if the cell is empty (neighborMines === 0)
             const [filledBoard, exploded] = floodFill(newBoard, x, y);
-            if (exploded) setAlive(false); // Should not happen with first-click logic, but handles potential future issues
+            if (exploded) setAlive(false); 
             
             return filledBoard;
           });
         }, [alive, won, initialized, cols, rows, mines, flagMode, floodFill]);
 
         // Handle chord click (double-click a revealed number)
-        const handleChord = useCallback((x, y) => { // Removed type annotations
+        const handleChord = useCallback((x, y) => { 
             setBoard(prevBoard => {
                 if (!alive || won) return prevBoard;
                 
@@ -333,7 +314,7 @@
 
         // Handle global context menu (right-click) to prevent default context menu
         useEffect(() => {
-          const handleContext = (e) => { // Removed : MouseEvent
+          const handleContext = (e) => { 
             // Only prevent if the user is right-clicking outside of a control
             const target = e.target;
             if (!target || !(target instanceof HTMLElement) || !target.closest('#minesweeper-grid')) {
@@ -346,7 +327,7 @@
 
 
         // Function to handle cell right-click (context menu event)
-        const handleContextMenu = (e, x, y) => { // Removed type annotations
+        const handleContextMenu = (e, x, y) => { 
           e.preventDefault();
           e.stopPropagation();
           // Check for shift key press for desktop flag toggle
@@ -357,6 +338,7 @@
         // --- Render Logic ---
 
         const gridStyle = {
+          // Use 1fr to ensure the cells dynamically size to fill the available width
           gridTemplateColumns: `repeat(${cols}, 1fr)`,
         };
 
@@ -407,8 +389,8 @@
               </button>
             </div>
 
-            {/* Game Grid */}
-            <div className="overflow-x-auto p-2 bg-gray-100 rounded-xl shadow-inner">
+            {/* Game Grid Container: Removed overflow-x-auto to allow fluid sizing */}
+            <div className="p-2 bg-gray-100 rounded-xl shadow-inner">
                 <div id="minesweeper-grid" style={gridStyle}>
                   {board.map((row, y) =>
                     row.map((cell, x) => {
