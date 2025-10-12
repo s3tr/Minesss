@@ -7,7 +7,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>Minesweeper | Fully Responsive Game</title>
+    <title>Minesweeper | Responsive Game</title>
     <!-- Tailwind CSS CDN for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- React & ReactDOM (Development UMD builds) -->
@@ -23,24 +23,25 @@
         background-color: #f1f5f9; /* bg-slate-100 */
         margin: 0;
         padding: 0;
-        /* Ensure the body takes up the full screen height */
         min-height: 100vh;
+        /* Ensure no unwanted scrolling on the body */
+        overflow: hidden; 
       }
       
+      /* The main grid container uses CSS variables set by React */
       #minesweeper-grid {
         display: grid;
         margin: 0 auto;
         border-radius: 0.5rem;
         box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-        /* Use CSS variables for sizing, defined dynamically by React */
+        
+        /* Grid definitions based on calculated pixel size */
         grid-template-columns: repeat(var(--cols), var(--cell-size));
         grid-template-rows: repeat(var(--rows), var(--cell-size));
         
         /* Set fixed width/height based on React calculation */
         width: var(--grid-width);
         height: var(--grid-height);
-        
-        /* Ensure grid cells don't wrap and cause scroll */
         flex-shrink: 0;
       }
       .cell-button {
@@ -55,22 +56,23 @@
         font-size: calc(var(--cell-size, 30px) * 0.5); 
         border: 1px solid #ccc; 
         box-sizing: border-box;
+        line-height: 1; /* Ensure text is perfectly centered */
       }
 
       /* Number color classes for Minesweeper */
-      .num-1 { color: #1565C0; } 
-      .num-2 { color: #388E3C; } 
-      .num-3 { color: #D32F2F; } 
-      .num-4 { color: #7B1FA2; } 
-      .num-5 { color: #FF6F00; } 
-      .num-6 { color: #00838F; } 
-      .num-7 { color: #000000; } 
-      .num-8 { color: #616161; } 
+      .num-1 { color: #1565C0; } /* Blue */
+      .num-2 { color: #388E3C; } /* Green */
+      .num-3 { color: #D32F2F; } /* Red */
+      .num-4 { color: #7B1FA2; } /* Purple */
+      .num-5 { color: #FF6F00; } /* Orange */
+      .num-6 { color: #00838F; } /* Cyan */
+      .num-7 { color: #000000; } /* Black */
+      .num-8 { color: #616161; } /* Gray */
     </style>
   </head>
   <!-- Use flex column layout for the body content -->
   <body class="flex flex-col min-h-screen">
-    <div id="root" class="flex-grow flex justify-center items-center p-4"></div>
+    <div id="root" class="flex-grow flex justify-center p-4 overflow-auto"></div>
 
     <script type="text/babel" data-presets="typescript,react">
       const { useEffect, useMemo, useRef, useState, useCallback } = React;
@@ -170,39 +172,30 @@
         const [gridDimensions, setGridDimensions] = useState({ cellSize: 30, gridWidth: 9 * 30, gridHeight: 9 * 30 });
 
         const { cols, rows, mines } = difficulty;
-
         const totalSafeCells = useMemo(() => cols * rows - mines, [cols, rows, mines]);
 
-        // Ref for the main control/header div to get its height
-        const controlsRef = useRef(null);
+        // Ref for the game area container to measure available space
+        const gameAreaRef = useRef(null);
 
-        // --- Core Sizing Logic ---
+        // --- Core Sizing Logic using ResizeObserver ---
         const calculateGridSize = useCallback(() => {
-            // Get current window dimensions
-            const windowWidth = window.innerWidth;
-            const windowHeight = window.innerHeight;
-
-            // Get the height of the controls/header (approximate if ref is not ready)
-            const controlsHeight = controlsRef.current ? controlsRef.current.offsetHeight : 150; 
+            if (!gameAreaRef.current) return;
             
-            // Define the maximum usable area based on user's request (80% W, 70% H)
-            // Use 90% width for a slightly safer margin, but prioritize 70% height for vertical space
-            const maxUsableWidth = windowWidth * 0.90; 
-            const maxUsableHeight = windowHeight * 0.70; 
-
-            // Calculate available space for the grid specifically (subtract header/footer margins)
-            const availableGridWidth = maxUsableWidth;
-            const availableGridHeight = maxUsableHeight - controlsHeight; // Subtract header height
-
+            const container = gameAreaRef.current;
+            
+            // Available space in the container (padding is 0.5rem * 2 = 16px)
+            const availableWidth = container.clientWidth - 16; 
+            const availableHeight = container.clientHeight - 16;
+            
             // 1. Calculate the maximum possible cell size based on width and height constraints
-            const maxCellSizeByWidth = Math.floor(availableGridWidth / cols);
-            const maxCellSizeByHeight = Math.floor(availableGridHeight / rows);
+            const maxCellSizeByWidth = Math.floor(availableWidth / cols);
+            const maxCellSizeByHeight = Math.floor(availableHeight / rows);
 
             // The cell size must be the minimum of the two to keep cells square and prevent overflow
             let finalCellSize = Math.min(maxCellSizeByWidth, maxCellSizeByHeight);
             
-            // Add a lower bound to cell size to keep it somewhat playable on tiny screens (e.g., 18px)
-            finalCellSize = Math.max(18, finalCellSize);
+            // Set a sensible minimum size to ensure readability on very small screens (e.g., 20px)
+            finalCellSize = Math.max(20, finalCellSize);
 
             // 2. Calculate the final grid dimensions
             const finalGridWidth = finalCellSize * cols;
@@ -217,11 +210,25 @@
         }, [cols, rows]);
 
         useEffect(() => {
-            // Recalculate size when the component mounts, difficulty changes, or window resizes
-            calculateGridSize(); 
-            window.addEventListener('resize', calculateGridSize);
-            return () => window.removeEventListener('resize', calculateGridSize);
-        }, [calculateGridSize, difficulty]);
+            if (!gameAreaRef.current) return;
+
+            const observer = new ResizeObserver(entries => {
+                // We only care about the first entry
+                if (entries.length > 0) {
+                    // Recalculate size whenever the game area container changes size
+                    calculateGridSize();
+                }
+            });
+            
+            observer.observe(gameAreaRef.current);
+            
+            // Initial calculation when the component mounts
+            calculateGridSize();
+
+            return () => {
+                observer.disconnect();
+            };
+        }, [calculateGridSize]); // Recalculate when difficulty (cols/rows) or the function itself changes
 
         // Apply calculated size via CSS Custom Properties
         const gridStyle = {
@@ -232,8 +239,9 @@
             '--rows': rows,
         };
 
-        // --- Core Game Logic (simplified) ---
+        // --- Core Game Logic (simplified, unchanged) ---
         const floodFill = useCallback((currentBoard, x, y) => { 
+          // ... floodFill logic ...
           if (!inBounds(cols, rows, x, y) || currentBoard[y][x].isRevealed) {
             return [currentBoard, false];
           }
@@ -324,6 +332,7 @@
             });
         }, [alive, won, cols, rows, floodFill]);
 
+
         // Win check, Reset game, and Context Menu logic remain the same
         useEffect(() => {
           if (!alive || won) return;
@@ -346,8 +355,8 @@
           setWon(false);
           setInitialized(false);
           setMinesLeft(newDifficulty.mines);
-          calculateGridSize(); // Recalculate size on reset
-        }, [difficulty, calculateGridSize]);
+          // calculateGridSize() is called automatically by the useEffect dependency on difficulty change
+        }, [difficulty]);
 
         useEffect(() => {
           const handleContext = (e) => { 
@@ -370,10 +379,11 @@
         const buttonBaseClass = "cell-button transition-all duration-75 text-center cursor-pointer select-none border-gray-400";
 
         return (
-          <div className="w-full max-w-7xl flex flex-col items-center">
+          // Main content container: centered and uses 80% width on large screens, full width on mobile
+          <div className="w-full max-w-4xl flex flex-col items-center">
             
-            {/* Header/Controls Area (Used for height calculation) */}
-            <div ref={controlsRef} className="w-full max-w-4xl p-4 md:p-8 bg-white rounded-3xl shadow-xl flex flex-col mb-4">
+            {/* Header/Controls Area */}
+            <div className="w-full p-4 md:p-8 bg-white rounded-3xl shadow-xl flex flex-col mb-4">
               <h1 className="text-3xl font-extrabold text-gray-800 text-center mb-6">Minesweeper</h1>
 
               <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
@@ -418,8 +428,8 @@
               </div>
             </div>
 
-            {/* Game Grid Container: Centered using flex properties */}
-            <div className="flex-grow flex justify-center items-center w-full">
+            {/* Game Grid Area: The space we observe and fill (70% height goal achieved by flex-grow) */}
+            <div ref={gameAreaRef} className="flex-grow flex justify-center items-center w-full p-2 min-h-20 max-h-[70vh]">
                 <div id="minesweeper-grid" style={gridStyle} className="bg-gray-100 rounded-xl shadow-inner">
                   {board.map((row, y) =>
                     row.map((cell, x) => {
