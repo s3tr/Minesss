@@ -23,19 +23,25 @@
       /* Custom styles for the grid and responsive display */
       #minesweeper-grid {
         display: grid;
-        width: fit-content;
+        /* Set grid to fill 100% of its container width, letting grid-template-columns handle the cell distribution */
+        width: 100%; 
+        max-width: fit-content; /* Helps in centering by shrinking to content size */
         margin: 0 auto;
         border-radius: 0.5rem;
         box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
       }
       .cell-button {
-        width: 30px;
-        height: 30px;
+        /*
+          Removed fixed width and height (30px/28px).
+          The width is now fluid (1fr), and aspect-ratio ensures it stays square.
+        */
+        aspect-ratio: 1 / 1; /* New: Ensures the cell remains perfectly square (height = width) */
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: bold;
-        font-size: 14px;
+        /* Using vmin for font size to scale gracefully, especially in 30-column mode */
+        font-size: 3vmin; 
         border: 1px solid #ccc; /* fallback border */
         box-sizing: border-box;
       }
@@ -43,9 +49,8 @@
       /* Responsive adjustments for cell size on smaller screens */
       @media (max-width: 640px) {
         .cell-button {
-          width: 28px;
-          height: 28px;
-          font-size: 12px;
+          /* In a small screen, use view width (vw) for better mobile scaling of the font */
+          font-size: 3.8vw; 
         }
       }
       
