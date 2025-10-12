@@ -1,5 +1,3 @@
-  Minesweeper: Responsive Web Game        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; } .demo-cell { transition: all 0.2s ease-in-out; aspect-ratio: 1 / 1; } .highlight-reveal { background-color: #e0e7ff !important; border-color: #a5b4fc !important; transform: scale(1.05); } .highlight-flag::after { content: '🚩'; font-size: 1.25em; line-height: 1; } .highlight-chord { background-color: #dbeafe !important; box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5); }
-
 💣 Minesweeper
 ==============
 
@@ -49,54 +47,9 @@ The game offers three standard modes to challenge players of all skill levels. T
 
 Gameplay Screenshot
 -------------------
+![image](gameplay.png)
 
-Below is a stylized, static representation of the game's UI, created with HTML and CSS to demonstrate the clean and modern aesthetic.
 
-1
-
-2
-
-1
-
-3
-
-1
-
-2
-
-1
-
-2
-
-🚩
-
-1
-
-💣
-
-2
-
-1
-
-1
-
-2
-
-1
-
-🚩
-
-1
-
-2
-
-1
-
-1
-
-2
-
-🚩
 
 Technology Stack
 ----------------
