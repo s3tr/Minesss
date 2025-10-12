@@ -47,7 +47,7 @@ The game offers three standard modes to challenge players of all skill levels. T
 
 Gameplay Screenshot
 -------------------
-![image](.\gameplay.png)
+![image](gameplay.png)
 
 
 
