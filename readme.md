@@ -1,9 +1,21 @@
 💣 Minesweeper
 ==============
 
-A modern, fully responsive implementation of the classic Minesweeper game, built with React and contained in a single HTML file for easy deployment.
+A modern, fully responsive implementation of the classic Minesweeper game, built with React, TypeScript, and Vite.
 
 [Play Now](http://mines.s3is.com)
+
+Development
+-----------
+
+```bash
+npm install
+npm run dev      # local dev server
+npm run build    # production build -> dist/
+npm run preview  # preview the production build
+```
+
+Pushing to `main` builds the site and deploys it to GitHub Pages automatically (see `.github/workflows/deploy.yml`).
 
 How to Play: Interactive Demo
 -----------------------------

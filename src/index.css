@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+}
+
+html,
+body {
+  overscroll-behavior: none;
+}
+
+/* Number color classes for Minesweeper, matching the classic palette */
+.num-1 {
+  color: #1565c0;
+}
+.num-2 {
+  color: #388e3c;
+}
+.num-3 {
+  color: #d32f2f;
+}
+.num-4 {
+  color: #7b1fa2;
+}
+.num-5 {
+  color: #ff6f00;
+}
+.num-6 {
+  color: #00838f;
+}
+.num-7 {
+  color: #000000;
+}
+.num-8 {
+  color: #616161;
+}
+
+.dark .num-7 {
+  color: #e5e7eb;
+}
